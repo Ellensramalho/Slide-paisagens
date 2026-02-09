@@ -28,5 +28,6 @@ img{
 }
 
 .slide{
-  transform: translate3d();
+ display: flex;
+ transition: .3s;
 }
