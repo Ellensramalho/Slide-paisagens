@@ -1,14 +1,12 @@
-export default class Slide {
+export class Slide {
   constructor(slide, wrapper) {
     this.slide = document.querySelector(slide);
     this.wrapper = document.querySelector(wrapper);
-
-    this.dist = { 
-      finalPosition: 0, 
-      startX: 0, 
-      movement: 0 
-    };
+    this.dist = { finalPosition: 0, startX: 0, movement: 0, movePosition: 0 };
+    this.activeClass = 'active';
+    this.changeEvent = new Event('changeEvent');
   }
+  
   transition(active) {
     this.slide.style.transition = active ? 'transform .3s' : '';
   }
@@ -24,7 +22,7 @@ export default class Slide {
   }
 
   onStart(event) {
-  let movetype;
+    let movetype;
     if (event.type === 'mousedown') {
       event.preventDefault();
       this.dist.startX = event.clientX;
@@ -38,19 +36,22 @@ export default class Slide {
   }
 
   onMove(event) {
-    const pointerPosition = (event.type === 'mousemove') ? event.clientX : event.changedTouches[0].clientX;
+    const pointerPosition = (event.type === 'mousemove')
+      ? event.clientX
+      : event.changedTouches[0].clientX;
+
     const finalPosition = this.updatePosition(pointerPosition);
     this.moveSlide(finalPosition);
   }
 
-  onEnd() {
+  onEnd(event) {
     const movetype = (event.type === 'mouseup') ? 'mousemove' : 'touchmove';
     this.wrapper.removeEventListener(movetype, this.onMove);
     this.dist.finalPosition = this.dist.movePosition;
     this.transition(true);
     this.changeSlideOnEnd();
-    
   }
+
   changeSlideOnEnd() {
     if (this.dist.movement > 120 && this.index.next !== undefined) {
       this.activeNextSlide();
@@ -60,7 +61,6 @@ export default class Slide {
       this.changeSlide(this.index.active);
     }
   }
-
 
   addSlideEvents() {
     this.wrapper.addEventListener('mousedown', this.onStart);
@@ -73,14 +73,16 @@ export default class Slide {
     this.onStart = this.onStart.bind(this);
     this.onMove = this.onMove.bind(this);
     this.onEnd = this.onEnd.bind(this);
+    this.onResize = this.onResize.bind(this);
   }
 
-slidesConfig() {
+  slidesConfig() {
     this.slideArray = [...this.slide.children].map((element) => {
       const position = this.slidePosition(element);
       return { position, element };
     });
   }
+
   slidePosition(slide) {
     const margin = (this.wrapper.offsetWidth - slide.offsetWidth) / 2;
     return -(slide.offsetLeft - margin);
@@ -94,6 +96,7 @@ slidesConfig() {
       next: index === last ? undefined : index + 1,
     };
   }
+
   changeSlide(index) {
     const activeSlide = this.slideArray[index];
     this.moveSlide(activeSlide.position);
@@ -103,6 +106,13 @@ slidesConfig() {
     this.wrapper.dispatchEvent(this.changeEvent);
   }
 
+  changeActiveClass() {
+    this.slideArray.forEach(item =>
+      item.element.classList.remove(this.activeClass)
+    );
+    this.slideArray[this.index.active].element.classList.add(this.activeClass);
+  }
+
   activePrevSlide() {
     if (this.index.prev !== undefined) this.changeSlide(this.index.prev);
   }
@@ -110,6 +120,18 @@ slidesConfig() {
   activeNextSlide() {
     if (this.index.next !== undefined) this.changeSlide(this.index.next);
   }
+
+  onResize() {
+    setTimeout(() => {
+      this.slidesConfig();
+      this.changeSlide(this.index.active);
+    }, 1000);
+  }
+
+  addResizeEvent() {
+    window.addEventListener('resize', this.onResize);
+  }
+
   init() {
     this.bindEvents();
     this.transition(true);
@@ -120,4 +142,3 @@ slidesConfig() {
     return this;
   }
 }
-
