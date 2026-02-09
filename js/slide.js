@@ -6,7 +6,7 @@ export class Slide {
     this.activeClass = 'active';
     this.changeEvent = new Event('changeEvent');
   }
-  
+
   transition(active) {
     this.slide.style.transition = active ? 'transform .3s' : '';
   }
